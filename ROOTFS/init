@@ -1,0 +1,22 @@
+#!/bin/sh
+mount -t proc none /proc
+mount -t sysfs none /sys
+mount -t devtmpfs none /dev 2>/dev/null || /bin/busybox mdev -s
+mount -t tmpfs none /tmp
+
+# Cargar módulos crypto vulnerables si están como módulos
+/bin/busybox modprobe algif_aead 2>/dev/null || true
+/bin/busybox modprobe authencesn 2>/dev/null || true
+
+# Hostname con el STUDENT_ID embebido (anti-copia)
+hostname "copy-fail-JeaneP-26"
+
+echo ""
+echo "  ╔═══════════════════════════════════════════════╗"
+echo "  ║  Kernel vulnerable: $(uname -r)               ║"
+echo "  ║  CVE-2026-31431 Copy Fail Lab                ║"
+echo "  ╚═══════════════════════════════════════════════╝"
+echo ""
+
+# Login como student (sin privilegios) para simular el escenario LPE
+exec /bin/su - student

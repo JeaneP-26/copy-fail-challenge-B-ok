@@ -1,0 +1,15 @@
+diff --git a/crypto/algif_aead.c b/crypto/algif_aead.c
+index 7d58cbbce..2d5576f9b 100644
+--- a/crypto/algif_aead.c
++++ b/crypto/algif_aead.c
+@@ -209,8 +209,8 @@ static int _aead_recvmsg(struct socket *sock, struct msghdr *msg,
+ 	 * is achieved by memory management specified as follows.
+ 	 */
+ 
+-	/* Use the RX SGL as source (and destination) for crypto op. */
+-	rsgl_src = areq->first_rsgl.sgl.sgt.sgl;
++	/* Use TX SGL as source, RX SGL as destination (out-of-place). */
++	rsgl_src = tsgl_src ? tsgl_src : areq->first_rsgl.sgl.sgt.sgl;
+ 
+ 	if (ctx->enc) {
+ 		/*
