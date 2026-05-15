@@ -1,0 +1,14 @@
+=== HITO 3: MITIGACIÓN TEMPORAL ===
+Fecha: Fri May 15 01:35:23 UTC 2026
+Hostname: (none)
+Kernel: 6.12.0
+Identidad: uid=0(root) gid=1001(student) groups=1001(student)
+
+Mitigación aplicada: chmod 0000 /usr/bin/su
+Permisos actuales de /usr/bin/su:
+----------    1 root     root         55680 May 15 01:30 /usr/bin/su
+
+Nota: kernel built-in, rmmod no disponible. Mitigacion via permisos SUID.
+
+Intento de exploit post-mitigacion:
+sh: 1: su: Permission denied
