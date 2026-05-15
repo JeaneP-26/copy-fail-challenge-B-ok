@@ -1,0 +1,10 @@
+=== HITO 1: KERNEL VULNERABLE CONFIRMADO ===
+Fecha: Fri May 15 00:14:33 UTC 2026
+Hostname: (none)
+Kernel: 6.12.0
+Identidad: uid=0(root) gid=1001(student) groups=1001(student)
+Usuario: root
+
+name         : authencesn(hmac(sha256),cbc(aes))
+driver       : authencesn(hmac(sha256-generic),cbc(ecb(aes-generic)))
+/proc/modules no existe o no hay módulos alg cargados
