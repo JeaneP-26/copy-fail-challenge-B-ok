@@ -137,20 +137,43 @@ Esta v2 incorpora los siguientes fixes respecto a la v1:
 
 
 
-EVIDENCIAS DE CADA HITO:
+////////////////////////////////////////EVIDENCIAS DE CADA HITO://////////////////////////////////////////////////
 
-HITO #1
+------------------------------------------------HITO #1-----------------------------------------------------------
 ![alt text](image.png)
+Lo primero que se realizo fue levantar el entorno. Ejecuté `make setup` para compilar el kernel vulnerable y armar el sistema de archivos, y luego `make qemu` para arrancar la máquina virtual.
 
+Una vez dentro de la VM confirmé que todo estaba bien: el kernel era la versión 6.12.0, el hostname mostraba mi ID de estudiante (`copy-fail-JeaneP-26`), y mi usuario era `student` con `uid=1001`. También verifiqué que Python 3.12.3 estaba disponible y que `/usr/bin/su` tenía el bit setuid activado (`-rwsr-xr-x`).
 
-HITO #2
+-------------------------------------------------HITO #2----------------------------------------------------------
 ![alt text](image-1.png)
+Este fue el hito principal del laboratorio. El exploit `copy_fail_exp.py` es un script de Python de 732 bytes que aprovecha el bug en el subsistema criptográfico del kernel para escribir en el page cache de `/usr/bin/su` sin tocar el disco.
 
+Ejecuté el exploit desde la VM como `student` y el prompt cambió de `$` a `#`, lo que indica que obtuve una shell con privilegios de root. Al hacer `id` confirmé: `uid=0(root)`.
 
-HITO #3
+El exploit usa AF_ALG con authencesn y splice() para escribir 4 bytes en la copia en memoria de `/usr/bin/su`. Como ese binario tiene setuid, cuando el kernel lo ejecuta con esos bytes modificados, entrega una shell root sin necesidad de contraseña ni nada.
+
+-------------------------------------------------HITO #3----------------------------------------------------------
 ![alt text](image-2.png)
 ![alt text](image-3.png)
+Para este hito tuve que demostrar que podía neutralizar el exploit sin recompilar el kernel. El documento pedía usar `rmmod algif_aead` pero en este kernel el módulo está compilado como built-in (`=y`), entonces eso no era posible.
 
+La mitigación que apliqué fue quitar todos los permisos de `/usr/bin/su` con `chmod 0000`. Al hacer esto el exploit ya no puede acceder al binario y falla con `Permission denied`. Intenté ejecutarlo dos veces para confirmar: primero quitando solo el SUID con `chmod 0755` lo cual no fue suficiente porque el binario seguía en memoria, y luego con `chmod 0000` que sí logro bloquear completamente el acceso.
 
-HITO #4
+--------------------------------------------------HITO #4------------------------------------------------------
 ![alt text](image-4.png)
+Este fue el hito más difícil. Tuve que clonar el código fuente del kernel Linux v6.12, modificar el archivo vulnerable y recompilar. El archivo a modificar es `crypto/algif_aead.c`, función `_aead_recvmsg()`. El bug estaba en esta línea:
+
+```c
+/* Use the RX SGL as source (and destination) for crypto op. */
+rsgl_src = areq->first_rsgl.sgl.sgt.sgl;
+```
+
+El problema es que esto hacía que `req->src` y `req->dst` apuntaran al mismo lugar en memoria, lo que permitía al exploit escribir en el page cache de archivos del sistema. Lo que logro solucionarlo fue cambiar esa línea para que use el TX SGL como fuente y el RX SGL como destino por separado:
+
+```c
+/* Use TX SGL as source, RX SGL as destination (out-of-place). */
+rsgl_src = tsgl_src ? tsgl_src : areq->first_rsgl.sgl.sgt.sgl;
+```
+
+Guardé el parche en `patches/fix_algif_aead.patch`, recompilé el kernel y arranqué la VM con el kernel parcheado usando `BZIMAGE=kernel/build/bzImage_patched bash scripts/04_run_qemu.sh`. Al intentar ejecutar el exploit esta vez el kernel lanzó un `NULL pointer dereference` y mató el proceso. Al hacer `id` el usuario seguía siendo `student`, no root. El parche funcionó.
