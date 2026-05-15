@@ -1,0 +1,8 @@
+=== HITO 2: EXPLOTACIÓN EXITOSA ===
+Fecha: Fri May 15 00:40:08 UTC 2026
+Hostname: (none)
+Kernel: 6.12.0
+Usuario actual: root
+Identidad actual: uid=0(root) gid=1001(student) groups=1001(student)
+d401e7d1c00605749d6c617ace73ab20a762b72e41c2e1590331596e38219a61  /home/student/copy_fail_exp.py
+Se obtuvo una shell con privilegios root (#).
